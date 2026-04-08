@@ -1,0 +1,215 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Mission } from './mission.entity';
+
+function toRad(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+) {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+@Injectable()
+export class MissionsService {
+  constructor(
+    @InjectRepository(Mission)
+    private readonly missionsRepository: Repository<Mission>,
+  ) {}
+
+  async findAll() {
+    return this.missionsRepository.find({
+      order: { id: 'DESC' },
+    });
+  }
+
+  async findByDriver(driverId: number) {
+    return this.missionsRepository
+      .createQueryBuilder('mission')
+      .where('mission.driverId = :driverId', { driverId })
+      .andWhere('mission.status IN (:...statuses)', {
+        statuses: ['assigned', 'accepted', 'arrived', 'started'],
+      })
+      .orderBy('mission.id', 'DESC')
+      .getMany();
+  }
+
+  async findAllByDriver(driverId: number) {
+    return this.missionsRepository.find({
+      where: { driverId },
+      order: { id: 'DESC' },
+    });
+  }
+
+  async findByClient(clientId: number) {
+    return this.missionsRepository
+      .createQueryBuilder('mission')
+      .where('mission.clientId = :clientId', { clientId })
+      .andWhere('mission.status IN (:...statuses)', {
+        statuses: ['pending', 'assigned', 'accepted', 'arrived', 'started'],
+      })
+      .orderBy('mission.id', 'DESC')
+      .getOne();
+  }
+
+  async findAllByClient(clientId: number) {
+    return this.missionsRepository.find({
+      where: { clientId },
+      order: { id: 'DESC' },
+    });
+  }
+
+  async create(
+    clientId: number,
+    pickup: string,
+    destination: string,
+    pickupLat: number,
+    pickupLng: number,
+    destinationLat: number,
+    destinationLng: number,
+    price: number,
+    vehicleType?: string,
+    driverId?: number,
+  ) {
+    const finalVehicleType = vehicleType ?? 'taxi';
+
+    const existingActiveMission = await this.missionsRepository
+      .createQueryBuilder('mission')
+      .where('mission.clientId = :clientId', { clientId })
+      .andWhere('mission.status IN (:...statuses)', {
+        statuses: ['pending', 'assigned', 'accepted', 'arrived', 'started'],
+      })
+      .orderBy('mission.id', 'DESC')
+      .getOne();
+
+    if (existingActiveMission) {
+      return {
+        error: 'Une mission active existe déjà',
+        mission: existingActiveMission,
+      };
+    }
+
+    let assignedDriverId: number | null = null;
+    let missionStatus = 'pending';
+
+    if (driverId !== undefined && driverId !== null) {
+      assignedDriverId = driverId;
+      missionStatus = 'assigned';
+    } else {
+      const drivers: Array<{
+        id: number;
+        lat: number | null;
+        lng: number | null;
+        vehicletype: string | null;
+      }> = await this.missionsRepository.query(
+        `SELECT id, lat, lng, "vehicleType" AS vehicletype FROM driver`,
+      );
+
+      const availableDrivers = drivers.filter(
+        (d) =>
+          d.lat !== null &&
+          d.lng !== null &&
+          (d.vehicletype ?? 'taxi') === finalVehicleType,
+      );
+
+      if (availableDrivers.length === 0) {
+        return {
+          error:
+            finalVehicleType === 'moto'
+              ? 'Aucun Telimani disponible'
+              : 'Aucun taxi disponible',
+          driverId: null,
+          vehicleType: finalVehicleType,
+        };
+      }
+
+      let nearestDriver = availableDrivers[0];
+      let minDistance = calculateDistance(
+        pickupLat,
+        pickupLng,
+        Number(nearestDriver.lat),
+        Number(nearestDriver.lng),
+      );
+
+      for (const driver of availableDrivers) {
+        const distance = calculateDistance(
+          pickupLat,
+          pickupLng,
+          Number(driver.lat),
+          Number(driver.lng),
+        );
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestDriver = driver;
+        }
+      }
+
+      assignedDriverId = nearestDriver.id;
+      missionStatus = 'assigned';
+    }
+
+    const mission = this.missionsRepository.create({
+      clientId,
+      pickup,
+      destination,
+      pickupLat,
+      pickupLng,
+      destinationLat,
+      destinationLng,
+      driverId: assignedDriverId,
+      price,
+      vehicleType: finalVehicleType,
+      status: missionStatus,
+    });
+
+    return this.missionsRepository.save(mission);
+  }
+
+  async assignDriver(id: number, driverId: number) {
+    const mission = await this.missionsRepository.findOne({
+      where: { id },
+    });
+
+    if (!mission) {
+      return { error: 'Mission not found' };
+    }
+
+    mission.driverId = driverId;
+    mission.status = 'assigned';
+
+    return this.missionsRepository.save(mission);
+  }
+
+  async updateStatus(id: number, status: string) {
+    const mission = await this.missionsRepository.findOne({
+      where: { id },
+    });
+
+    if (!mission) {
+      return { error: 'Mission not found' };
+    }
+
+    mission.status = status;
+
+    return this.missionsRepository.save(mission);
+  }
+}
