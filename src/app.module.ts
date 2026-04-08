@@ -12,14 +12,13 @@ import { SettingsModule } from './settings/settings.module';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'maliba22',
-      database: 'supergo',
+      url: process.env.DATABASE_URL,
       autoLoadEntities: true,
       synchronize: true,
       logging: true,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     }),
 
     ServeStaticModule.forRoot({
