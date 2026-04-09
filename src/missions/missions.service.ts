@@ -130,12 +130,12 @@ export class MissionsService {
           (d.vehicletype ?? 'taxi') === finalVehicleType,
       );
 
-      if (availableDrivers.length === 0) {
+      if (availableDrivers.length == 0) {
         return {
           error:
-            finalVehicleType === 'moto'
-              ? 'Aucun Telimani disponible'
-              : 'Aucun taxi disponible',
+              finalVehicleType == 'moto'
+                  ? 'Aucun Telimani disponible'
+                  : 'Aucun taxi disponible',
           driverId: null,
           vehicleType: finalVehicleType,
         };
@@ -190,7 +190,7 @@ export class MissionsService {
     });
 
     if (!mission) {
-      return { error: 'Mission not found' };
+      return { error: 'Mission introuvable' };
     }
 
     mission.driverId = driverId;
@@ -205,7 +205,7 @@ export class MissionsService {
     });
 
     if (!mission) {
-      return { error: 'Mission not found' };
+      return { error: 'Mission introuvable' };
     }
 
     mission.status = status;

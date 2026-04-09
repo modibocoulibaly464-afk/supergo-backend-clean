@@ -12,6 +12,7 @@ export class DriversService {
 
   findAll() {
     return this.driversRepository.find({
+      select: ['id', 'name', 'phone', 'vehicleType', 'lat', 'lng'],
       order: { id: 'DESC' },
     });
   }
@@ -39,7 +40,16 @@ export class DriversService {
       lng: -8.0029,
     });
 
-    return await this.driversRepository.save(driver);
+    const savedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: savedDriver.id,
+      name: savedDriver.name,
+      phone: savedDriver.phone,
+      vehicleType: savedDriver.vehicleType,
+      lat: savedDriver.lat,
+      lng: savedDriver.lng,
+    };
   }
 
   async login(phone: string, password: string) {
@@ -51,7 +61,14 @@ export class DriversService {
       return { error: 'Téléphone ou mot de passe incorrect' };
     }
 
-    return driver;
+    return {
+      id: driver.id,
+      name: driver.name,
+      phone: driver.phone,
+      vehicleType: driver.vehicleType,
+      lat: driver.lat,
+      lng: driver.lng,
+    };
   }
 
   async create(name: string, phone?: string, vehicleType?: string) {
@@ -64,7 +81,16 @@ export class DriversService {
       lng: -8.0029,
     });
 
-    return await this.driversRepository.save(driver);
+    const savedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: savedDriver.id,
+      name: savedDriver.name,
+      phone: savedDriver.phone,
+      vehicleType: savedDriver.vehicleType,
+      lat: savedDriver.lat,
+      lng: savedDriver.lng,
+    };
   }
 
   async updateLocation(id: number, lat: number, lng: number) {
@@ -73,12 +99,21 @@ export class DriversService {
     });
 
     if (!driver) {
-      return { error: 'Driver not found' };
+      return { error: 'Chauffeur introuvable' };
     }
 
     driver.lat = lat;
     driver.lng = lng;
 
-    return await this.driversRepository.save(driver);
+    const updatedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: updatedDriver.id,
+      name: updatedDriver.name,
+      phone: updatedDriver.phone,
+      vehicleType: updatedDriver.vehicleType,
+      lat: updatedDriver.lat,
+      lng: updatedDriver.lng,
+    };
   }
 }

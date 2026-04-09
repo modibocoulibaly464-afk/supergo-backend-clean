@@ -39,8 +39,6 @@ export class DriversController {
       vehicleType?: string;
     },
   ) {
-    console.log('REGISTER BODY =>', body);
-
     return this.driversService.register(
       body.name,
       body.phone,

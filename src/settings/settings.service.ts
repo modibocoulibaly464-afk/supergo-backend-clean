@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 export class SettingsService {
   private settings = {
     appName: 'SuperGo',
-    logoUrl: 'http://192.168.0.17:3001/uploads/logo.png',
+    logoUrl: '',
   };
 
   getSettings() {

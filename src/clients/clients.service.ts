@@ -11,7 +11,9 @@ export class ClientsService {
   ) {}
 
   findAll() {
-    return this.clientsRepository.find();
+    return this.clientsRepository.find({
+      select: ['id', 'name', 'phone'],
+    });
   }
 
   async register(name: string, phone: string, password: string) {
@@ -29,7 +31,13 @@ export class ClientsService {
       password,
     });
 
-    return await this.clientsRepository.save(client);
+    const savedClient = await this.clientsRepository.save(client);
+
+    return {
+      id: savedClient.id,
+      name: savedClient.name,
+      phone: savedClient.phone,
+    };
   }
 
   async login(phone: string, password: string) {
@@ -38,9 +46,13 @@ export class ClientsService {
     });
 
     if (!client) {
-      return { error: 'Invalid credentials' };
+      return { error: 'Téléphone ou mot de passe incorrect' };
     }
 
-    return client;
+    return {
+      id: client.id,
+      name: client.name,
+      phone: client.phone,
+    };
   }
 }
