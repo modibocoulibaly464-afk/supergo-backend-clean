@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from './client.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ClientsService {
@@ -25,10 +26,12 @@ export class ClientsService {
       return { error: 'Téléphone déjà utilisé' };
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const client = this.clientsRepository.create({
       name,
       phone,
-      password,
+      password: hashedPassword,
     });
 
     const savedClient = await this.clientsRepository.save(client);
@@ -42,10 +45,16 @@ export class ClientsService {
 
   async login(phone: string, password: string) {
     const client = await this.clientsRepository.findOne({
-      where: { phone, password },
+      where: { phone },
     });
 
     if (!client) {
+      return { error: 'Téléphone ou mot de passe incorrect' };
+    }
+
+    const isMatch = await bcrypt.compare(password, client.password);
+
+    if (!isMatch) {
       return { error: 'Téléphone ou mot de passe incorrect' };
     }
 
