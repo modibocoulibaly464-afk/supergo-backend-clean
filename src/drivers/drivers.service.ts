@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Driver } from './driver.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class DriversService {
@@ -31,10 +32,12 @@ export class DriversService {
       return { error: 'Téléphone déjà utilisé' };
     }
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const driver = this.driversRepository.create({
       name,
       phone,
-      password,
+      password: hashedPassword,
       vehicleType: vehicleType ?? 'taxi',
       lat: 12.6392,
       lng: -8.0029,
@@ -54,10 +57,16 @@ export class DriversService {
 
   async login(phone: string, password: string) {
     const driver = await this.driversRepository.findOne({
-      where: { phone, password },
+      where: { phone },
     });
 
     if (!driver) {
+      return { error: 'Téléphone ou mot de passe incorrect' };
+    }
+
+    const isMatch = await bcrypt.compare(password, driver.password);
+
+    if (!isMatch) {
       return { error: 'Téléphone ou mot de passe incorrect' };
     }
 
@@ -72,10 +81,12 @@ export class DriversService {
   }
 
   async create(name: string, phone?: string, vehicleType?: string) {
+    const hashedPassword = await bcrypt.hash('1234', 10);
+
     const driver = this.driversRepository.create({
       name,
       phone: phone ?? '',
-      password: '1234',
+      password: hashedPassword,
       vehicleType: vehicleType ?? 'taxi',
       lat: 12.6392,
       lng: -8.0029,
