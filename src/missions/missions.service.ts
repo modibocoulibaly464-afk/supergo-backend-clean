@@ -111,9 +111,32 @@ export class MissionsService {
     let missionStatus = 'pending';
 
     if (driverId !== undefined && driverId !== null) {
+      const existingDriverMission = await this.missionsRepository
+        .createQueryBuilder('mission')
+        .where('mission.driverId = :driverId', { driverId })
+        .andWhere('mission.status IN (:...statuses)', {
+          statuses: ['assigned', 'accepted', 'arrived', 'started'],
+        })
+        .getOne();
+
+      if (existingDriverMission) {
+        return { error: 'Ce chauffeur est déjà occupé' };
+      }
+
       assignedDriverId = driverId;
       missionStatus = 'assigned';
     } else {
+      const busyMissions = await this.missionsRepository
+        .createQueryBuilder('mission')
+        .select('mission.driverId', 'driverId')
+        .where('mission.driverId IS NOT NULL')
+        .andWhere('mission.status IN (:...statuses)', {
+          statuses: ['assigned', 'accepted', 'arrived', 'started'],
+        })
+        .getRawMany();
+
+      const busyDriverIds = busyMissions.map((m) => Number(m.driverId));
+
       const drivers: Array<{
         id: number;
         lat: number | null;
@@ -127,15 +150,16 @@ export class MissionsService {
         (d) =>
           d.lat !== null &&
           d.lng !== null &&
-          (d.vehicletype ?? 'taxi') === finalVehicleType,
+          (d.vehicletype ?? 'taxi') === finalVehicleType &&
+          !busyDriverIds.includes(d.id),
       );
 
       if (availableDrivers.length == 0) {
         return {
           error:
-              finalVehicleType == 'moto'
-                  ? 'Aucun Telimani disponible'
-                  : 'Aucun taxi disponible',
+            finalVehicleType == 'moto'
+              ? 'Aucun Telimani disponible'
+              : 'Aucun taxi disponible',
           driverId: null,
           vehicleType: finalVehicleType,
         };
@@ -164,6 +188,19 @@ export class MissionsService {
       }
 
       assignedDriverId = nearestDriver.id;
+
+      const existingDriverMission = await this.missionsRepository
+        .createQueryBuilder('mission')
+        .where('mission.driverId = :driverId', { driverId: assignedDriverId })
+        .andWhere('mission.status IN (:...statuses)', {
+          statuses: ['assigned', 'accepted', 'arrived', 'started'],
+        })
+        .getOne();
+
+      if (existingDriverMission) {
+        return { error: 'Ce chauffeur est déjà occupé' };
+      }
+
       missionStatus = 'assigned';
     }
 
@@ -191,6 +228,19 @@ export class MissionsService {
 
     if (!mission) {
       return { error: 'Mission introuvable' };
+    }
+
+    const existingDriverMission = await this.missionsRepository
+      .createQueryBuilder('mission')
+      .where('mission.driverId = :driverId', { driverId })
+      .andWhere('mission.status IN (:...statuses)', {
+        statuses: ['assigned', 'accepted', 'arrived', 'started'],
+      })
+      .andWhere('mission.id != :missionId', { missionId: id })
+      .getOne();
+
+    if (existingDriverMission) {
+      return { error: 'Ce chauffeur est déjà occupé' };
     }
 
     mission.driverId = driverId;

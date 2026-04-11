@@ -12,7 +12,7 @@ import { SettingsModule } from './settings/settings.module';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL,
+      url: 'postgresql://postgres:SsHaGAgzyWYGRbhFBbeQkSkLYdYeVedC@mainline.proxy.rlwy.net:38748/railway',
       autoLoadEntities: true,
       synchronize: true,
       logging: true,

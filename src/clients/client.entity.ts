@@ -3,14 +3,14 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 @Entity()
 export class Client {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ unique: true })
-  phone: string;
+  phone!: string;
 
   @Column()
-  password: string;
+  password!: string;
 }
