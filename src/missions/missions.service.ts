@@ -144,19 +144,27 @@ export class MissionsService {
         vehicletype: string | null;
         isactive: boolean;
         isblocked: boolean;
+        lastseen: string | null;
       }> = await this.missionsRepository.query(
-        `SELECT id, lat, lng, "vehicleType" AS vehicletype, "isActive" AS isactive, "isBlocked" AS isblocked FROM driver`,
+        `SELECT id, lat, lng, "vehicleType" AS vehicletype, "isActive" AS isactive, "isBlocked" AS isblocked, "lastSeen" AS lastseen FROM driver`,
       );
 
-      const availableDrivers = drivers.filter(
-        (d) =>
-          d.lat !== null &&
-          d.lng !== null &&
-          (d.vehicletype ?? 'taxi') === finalVehicleType &&
-          d.isactive === true &&
-          d.isblocked === false &&
-          !busyDriverIds.includes(d.id),
-      );
+      const now = Date.now();
+      const onlineThresholdMs = 2 * 60 * 1000;
+
+      const availableDrivers = drivers.filter((d) => {
+        if (d.lat === null || d.lng === null) return false;
+        if ((d.vehicletype ?? 'taxi') !== finalVehicleType) return false;
+        if (d.isactive !== true) return false;
+        if (d.isblocked === true) return false;
+        if (busyDriverIds.includes(d.id)) return false;
+        if (!d.lastseen) return false;
+
+        const lastSeenTime = new Date(d.lastseen).getTime();
+        if (isNaN(lastSeenTime)) return false;
+
+        return now - lastSeenTime <= onlineThresholdMs;
+      });
 
       if (availableDrivers.length == 0) {
         return {

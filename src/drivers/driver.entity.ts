@@ -28,4 +28,7 @@ export class Driver {
 
   @Column({ default: false })
   isBlocked!: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastSeen!: Date | null;
 }

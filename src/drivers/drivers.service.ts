@@ -22,6 +22,7 @@ export class DriversService {
         'lng',
         'isActive',
         'isBlocked',
+        'lastSeen',
       ],
       order: { id: 'DESC' },
     });
@@ -52,6 +53,7 @@ export class DriversService {
       lng: -8.0029,
       isActive: true,
       isBlocked: false,
+      lastSeen: new Date(),
     });
 
     const savedDriver = await this.driversRepository.save(driver);
@@ -65,6 +67,7 @@ export class DriversService {
       lng: savedDriver.lng,
       isActive: savedDriver.isActive,
       isBlocked: savedDriver.isBlocked,
+      lastSeen: savedDriver.lastSeen,
     };
   }
 
@@ -87,15 +90,19 @@ export class DriversService {
       return { error: 'Téléphone ou mot de passe incorrect' };
     }
 
+    driver.lastSeen = new Date();
+    const updatedDriver = await this.driversRepository.save(driver);
+
     return {
-      id: driver.id,
-      name: driver.name,
-      phone: driver.phone,
-      vehicleType: driver.vehicleType,
-      lat: driver.lat,
-      lng: driver.lng,
-      isActive: driver.isActive,
-      isBlocked: driver.isBlocked,
+      id: updatedDriver.id,
+      name: updatedDriver.name,
+      phone: updatedDriver.phone,
+      vehicleType: updatedDriver.vehicleType,
+      lat: updatedDriver.lat,
+      lng: updatedDriver.lng,
+      isActive: updatedDriver.isActive,
+      isBlocked: updatedDriver.isBlocked,
+      lastSeen: updatedDriver.lastSeen,
     };
   }
 
@@ -111,6 +118,7 @@ export class DriversService {
       lng: -8.0029,
       isActive: true,
       isBlocked: false,
+      lastSeen: new Date(),
     });
 
     const savedDriver = await this.driversRepository.save(driver);
@@ -124,6 +132,7 @@ export class DriversService {
       lng: savedDriver.lng,
       isActive: savedDriver.isActive,
       isBlocked: savedDriver.isBlocked,
+      lastSeen: savedDriver.lastSeen,
     };
   }
 
@@ -142,6 +151,7 @@ export class DriversService {
 
     driver.lat = lat;
     driver.lng = lng;
+    driver.lastSeen = new Date();
 
     const updatedDriver = await this.driversRepository.save(driver);
 
@@ -154,6 +164,7 @@ export class DriversService {
       lng: updatedDriver.lng,
       isActive: updatedDriver.isActive,
       isBlocked: updatedDriver.isBlocked,
+      lastSeen: updatedDriver.lastSeen,
     };
   }
 
@@ -171,6 +182,7 @@ export class DriversService {
     }
 
     driver.isActive = true;
+    driver.lastSeen = new Date();
 
     const updatedDriver = await this.driversRepository.save(driver);
 
@@ -178,6 +190,7 @@ export class DriversService {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
       isBlocked: updatedDriver.isBlocked,
+      lastSeen: updatedDriver.lastSeen,
     };
   }
 
@@ -198,6 +211,7 @@ export class DriversService {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
       isBlocked: updatedDriver.isBlocked,
+      lastSeen: updatedDriver.lastSeen,
     };
   }
 
@@ -219,6 +233,7 @@ export class DriversService {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
       isBlocked: updatedDriver.isBlocked,
+      lastSeen: updatedDriver.lastSeen,
     };
   }
 
@@ -239,6 +254,7 @@ export class DriversService {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
       isBlocked: updatedDriver.isBlocked,
+      lastSeen: updatedDriver.lastSeen,
     };
   }
 }
