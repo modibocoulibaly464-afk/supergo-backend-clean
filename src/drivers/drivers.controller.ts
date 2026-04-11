@@ -64,4 +64,24 @@ export class DriversController {
       body.lng,
     );
   }
+
+  @Patch(':id/activate')
+  activateDriver(@Param('id') id: string) {
+    return this.driversService.activateDriver(Number(id));
+  }
+
+  @Patch(':id/deactivate')
+  deactivateDriver(@Param('id') id: string) {
+    return this.driversService.deactivateDriver(Number(id));
+  }
+
+  @Patch(':id/block')
+  blockDriver(@Param('id') id: string) {
+    return this.driversService.blockDriver(Number(id));
+  }
+
+  @Patch(':id/unblock')
+  unblockDriver(@Param('id') id: string) {
+    return this.driversService.unblockDriver(Number(id));
+  }
 }

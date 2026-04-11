@@ -13,7 +13,16 @@ export class DriversService {
 
   findAll() {
     return this.driversRepository.find({
-      select: ['id', 'name', 'phone', 'vehicleType', 'lat', 'lng'],
+      select: [
+        'id',
+        'name',
+        'phone',
+        'vehicleType',
+        'lat',
+        'lng',
+        'isActive',
+        'isBlocked',
+      ],
       order: { id: 'DESC' },
     });
   }
@@ -41,6 +50,8 @@ export class DriversService {
       vehicleType: vehicleType ?? 'taxi',
       lat: 12.6392,
       lng: -8.0029,
+      isActive: true,
+      isBlocked: false,
     });
 
     const savedDriver = await this.driversRepository.save(driver);
@@ -52,6 +63,8 @@ export class DriversService {
       vehicleType: savedDriver.vehicleType,
       lat: savedDriver.lat,
       lng: savedDriver.lng,
+      isActive: savedDriver.isActive,
+      isBlocked: savedDriver.isBlocked,
     };
   }
 
@@ -62,6 +75,10 @@ export class DriversService {
 
     if (!driver) {
       return { error: 'Téléphone ou mot de passe incorrect' };
+    }
+
+    if (driver.isBlocked) {
+      return { error: 'Ce chauffeur est bloqué' };
     }
 
     const isMatch = await bcrypt.compare(password, driver.password);
@@ -77,6 +94,8 @@ export class DriversService {
       vehicleType: driver.vehicleType,
       lat: driver.lat,
       lng: driver.lng,
+      isActive: driver.isActive,
+      isBlocked: driver.isBlocked,
     };
   }
 
@@ -90,6 +109,8 @@ export class DriversService {
       vehicleType: vehicleType ?? 'taxi',
       lat: 12.6392,
       lng: -8.0029,
+      isActive: true,
+      isBlocked: false,
     });
 
     const savedDriver = await this.driversRepository.save(driver);
@@ -101,6 +122,8 @@ export class DriversService {
       vehicleType: savedDriver.vehicleType,
       lat: savedDriver.lat,
       lng: savedDriver.lng,
+      isActive: savedDriver.isActive,
+      isBlocked: savedDriver.isBlocked,
     };
   }
 
@@ -111,6 +134,10 @@ export class DriversService {
 
     if (!driver) {
       return { error: 'Chauffeur introuvable' };
+    }
+
+    if (driver.isBlocked) {
+      return { error: 'Ce chauffeur est bloqué' };
     }
 
     driver.lat = lat;
@@ -125,6 +152,93 @@ export class DriversService {
       vehicleType: updatedDriver.vehicleType,
       lat: updatedDriver.lat,
       lng: updatedDriver.lng,
+      isActive: updatedDriver.isActive,
+      isBlocked: updatedDriver.isBlocked,
+    };
+  }
+
+  async activateDriver(id: number) {
+    const driver = await this.driversRepository.findOne({
+      where: { id },
+    });
+
+    if (!driver) {
+      return { error: 'Chauffeur introuvable' };
+    }
+
+    if (driver.isBlocked) {
+      return { error: 'Impossible d’activer un chauffeur bloqué' };
+    }
+
+    driver.isActive = true;
+
+    const updatedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: updatedDriver.id,
+      isActive: updatedDriver.isActive,
+      isBlocked: updatedDriver.isBlocked,
+    };
+  }
+
+  async deactivateDriver(id: number) {
+    const driver = await this.driversRepository.findOne({
+      where: { id },
+    });
+
+    if (!driver) {
+      return { error: 'Chauffeur introuvable' };
+    }
+
+    driver.isActive = false;
+
+    const updatedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: updatedDriver.id,
+      isActive: updatedDriver.isActive,
+      isBlocked: updatedDriver.isBlocked,
+    };
+  }
+
+  async blockDriver(id: number) {
+    const driver = await this.driversRepository.findOne({
+      where: { id },
+    });
+
+    if (!driver) {
+      return { error: 'Chauffeur introuvable' };
+    }
+
+    driver.isBlocked = true;
+    driver.isActive = false;
+
+    const updatedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: updatedDriver.id,
+      isActive: updatedDriver.isActive,
+      isBlocked: updatedDriver.isBlocked,
+    };
+  }
+
+  async unblockDriver(id: number) {
+    const driver = await this.driversRepository.findOne({
+      where: { id },
+    });
+
+    if (!driver) {
+      return { error: 'Chauffeur introuvable' };
+    }
+
+    driver.isBlocked = false;
+
+    const updatedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: updatedDriver.id,
+      isActive: updatedDriver.isActive,
+      isBlocked: updatedDriver.isBlocked,
     };
   }
 }

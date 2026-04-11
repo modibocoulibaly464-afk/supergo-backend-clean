@@ -142,8 +142,10 @@ export class MissionsService {
         lat: number | null;
         lng: number | null;
         vehicletype: string | null;
+        isactive: boolean;
+        isblocked: boolean;
       }> = await this.missionsRepository.query(
-        `SELECT id, lat, lng, "vehicleType" AS vehicletype FROM driver`,
+        `SELECT id, lat, lng, "vehicleType" AS vehicletype, "isActive" AS isactive, "isBlocked" AS isblocked FROM driver`,
       );
 
       const availableDrivers = drivers.filter(
@@ -151,6 +153,8 @@ export class MissionsService {
           d.lat !== null &&
           d.lng !== null &&
           (d.vehicletype ?? 'taxi') === finalVehicleType &&
+          d.isactive === true &&
+          d.isblocked === false &&
           !busyDriverIds.includes(d.id),
       );
 

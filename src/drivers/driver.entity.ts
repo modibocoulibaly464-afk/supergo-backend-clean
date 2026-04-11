@@ -3,23 +3,29 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 @Entity()
 export class Driver {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  name: string;
+  name!: string;
 
   @Column({ unique: true })
-  phone: string;
+  phone!: string;
 
   @Column()
-  password: string;
+  password!: string;
 
   @Column({ default: 'taxi' })
-  vehicleType: string;
+  vehicleType!: string;
 
   @Column('float', { nullable: true, default: 12.6392 })
-  lat: number | null;
+  lat!: number | null;
 
   @Column('float', { nullable: true, default: -8.0029 })
-  lng: number | null;
+  lng!: number | null;
+
+  @Column({ default: true })
+  isActive!: boolean;
+
+  @Column({ default: false })
+  isBlocked!: boolean;
 }
