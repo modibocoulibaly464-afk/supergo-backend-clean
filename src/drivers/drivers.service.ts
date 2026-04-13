@@ -11,6 +11,9 @@ export class DriversService {
     private readonly driversRepository: Repository<Driver>,
   ) {}
 
+  // =========================
+  // GET ALL DRIVERS
+  // =========================
   findAll() {
     return this.driversRepository.find({
       select: [
@@ -29,6 +32,9 @@ export class DriversService {
     });
   }
 
+  // =========================
+  // GET NEARBY DRIVERS (🔥 IMPORTANT)
+  // =========================
   async findNearbyDrivers() {
     const drivers = await this.driversRepository.find({
       select: [
@@ -53,8 +59,10 @@ export class DriversService {
         (driver) =>
           driver.lat !== null &&
           driver.lng !== null &&
-          driver.lat !== 0 &&
-          driver.lng !== 0,
+          driver.lat > 12 && // Bamako
+          driver.lat < 13 &&
+          driver.lng > -9 &&
+          driver.lng < -7,
       )
       .map((driver) => ({
         id: driver.id,
@@ -66,6 +74,9 @@ export class DriversService {
       }));
   }
 
+  // =========================
+  // REGISTER
+  // =========================
   async register(
     name: string,
     phone: string,
@@ -111,6 +122,9 @@ export class DriversService {
     };
   }
 
+  // =========================
+  // LOGIN
+  // =========================
   async login(phone: string, password: string) {
     const driver = await this.driversRepository.findOne({
       where: { phone },
@@ -131,6 +145,7 @@ export class DriversService {
     }
 
     driver.lastSeen = new Date();
+
     const updatedDriver = await this.driversRepository.save(driver);
 
     return {
@@ -147,6 +162,9 @@ export class DriversService {
     };
   }
 
+  // =========================
+  // CREATE (ADMIN)
+  // =========================
   async create(name: string, phone?: string, vehicleType?: string) {
     const hashedPassword = await bcrypt.hash('1234', 10);
 
@@ -179,6 +197,9 @@ export class DriversService {
     };
   }
 
+  // =========================
+  // UPDATE LOCATION (🔥 IMPORTANT POUR MAP)
+  // =========================
   async updateLocation(
     id: number,
     lat: number,
@@ -206,42 +227,31 @@ export class DriversService {
 
     return {
       id: updatedDriver.id,
-      name: updatedDriver.name,
-      phone: updatedDriver.phone,
-      vehicleType: updatedDriver.vehicleType,
       lat: updatedDriver.lat,
       lng: updatedDriver.lng,
       heading: updatedDriver.heading,
       isActive: updatedDriver.isActive,
-      isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
     };
   }
 
+  // =========================
+  // ONLINE / OFFLINE
+  // =========================
   async activateDriver(id: number) {
     const driver = await this.driversRepository.findOne({
       where: { id },
     });
 
-    if (!driver) {
-      return { error: 'Chauffeur introuvable' };
-    }
-
-    if (driver.isBlocked) {
-      return { error: 'Impossible d’activer un chauffeur bloqué' };
-    }
+    if (!driver) return { error: 'Chauffeur introuvable' };
+    if (driver.isBlocked) return { error: 'Chauffeur bloqué' };
 
     driver.isActive = true;
     driver.lastSeen = new Date();
 
-    const updatedDriver = await this.driversRepository.save(driver);
+    await this.driversRepository.save(driver);
 
-    return {
-      id: updatedDriver.id,
-      isActive: updatedDriver.isActive,
-      isBlocked: updatedDriver.isBlocked,
-      lastSeen: updatedDriver.lastSeen,
-    };
+    return { success: true };
   }
 
   async deactivateDriver(id: number) {
@@ -249,42 +259,31 @@ export class DriversService {
       where: { id },
     });
 
-    if (!driver) {
-      return { error: 'Chauffeur introuvable' };
-    }
+    if (!driver) return { error: 'Chauffeur introuvable' };
 
     driver.isActive = false;
 
-    const updatedDriver = await this.driversRepository.save(driver);
+    await this.driversRepository.save(driver);
 
-    return {
-      id: updatedDriver.id,
-      isActive: updatedDriver.isActive,
-      isBlocked: updatedDriver.isBlocked,
-      lastSeen: updatedDriver.lastSeen,
-    };
+    return { success: true };
   }
 
+  // =========================
+  // BLOCK
+  // =========================
   async blockDriver(id: number) {
     const driver = await this.driversRepository.findOne({
       where: { id },
     });
 
-    if (!driver) {
-      return { error: 'Chauffeur introuvable' };
-    }
+    if (!driver) return { error: 'Chauffeur introuvable' };
 
     driver.isBlocked = true;
     driver.isActive = false;
 
-    const updatedDriver = await this.driversRepository.save(driver);
+    await this.driversRepository.save(driver);
 
-    return {
-      id: updatedDriver.id,
-      isActive: updatedDriver.isActive,
-      isBlocked: updatedDriver.isBlocked,
-      lastSeen: updatedDriver.lastSeen,
-    };
+    return { success: true };
   }
 
   async unblockDriver(id: number) {
@@ -292,19 +291,12 @@ export class DriversService {
       where: { id },
     });
 
-    if (!driver) {
-      return { error: 'Chauffeur introuvable' };
-    }
+    if (!driver) return { error: 'Chauffeur introuvable' };
 
     driver.isBlocked = false;
 
-    const updatedDriver = await this.driversRepository.save(driver);
+    await this.driversRepository.save(driver);
 
-    return {
-      id: updatedDriver.id,
-      isActive: updatedDriver.isActive,
-      isBlocked: updatedDriver.isBlocked,
-      lastSeen: updatedDriver.lastSeen,
-    };
+    return { success: true };
   }
 }
