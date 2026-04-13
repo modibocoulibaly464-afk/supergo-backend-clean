@@ -18,6 +18,11 @@ export class DriversController {
     return this.driversService.findAll();
   }
 
+  @Get('nearby')
+  getNearbyDrivers() {
+    return this.driversService.findNearbyDrivers();
+  }
+
   @Post()
   createDriver(
     @Body() body: { name: string; phone?: string; vehicleType?: string },
@@ -56,12 +61,13 @@ export class DriversController {
   @Patch(':id/location')
   updateLocation(
     @Param('id') id: string,
-    @Body() body: { lat: number; lng: number },
+    @Body() body: { lat: number; lng: number; heading?: number },
   ) {
     return this.driversService.updateLocation(
       Number(id),
-      body.lat,
-      body.lng,
+      Number(body.lat),
+      Number(body.lng),
+      Number(body.heading ?? 0),
     );
   }
 

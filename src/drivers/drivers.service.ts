@@ -20,12 +20,50 @@ export class DriversService {
         'vehicleType',
         'lat',
         'lng',
+        'heading',
         'isActive',
         'isBlocked',
         'lastSeen',
       ],
       order: { id: 'DESC' },
     });
+  }
+
+  async findNearbyDrivers() {
+    const drivers = await this.driversRepository.find({
+      select: [
+        'id',
+        'vehicleType',
+        'lat',
+        'lng',
+        'heading',
+        'isActive',
+        'isBlocked',
+        'lastSeen',
+      ],
+      where: {
+        isActive: true,
+        isBlocked: false,
+      },
+      order: { id: 'DESC' },
+    });
+
+    return drivers
+      .filter(
+        (driver) =>
+          driver.lat !== null &&
+          driver.lng !== null &&
+          driver.lat !== 0 &&
+          driver.lng !== 0,
+      )
+      .map((driver) => ({
+        id: driver.id,
+        lat: Number(driver.lat),
+        lng: Number(driver.lng),
+        vehicleType: (driver.vehicleType ?? 'taxi').trim().toLowerCase(),
+        heading: Number(driver.heading ?? 0),
+        isOnline: !!driver.isActive,
+      }));
   }
 
   async register(
@@ -51,6 +89,7 @@ export class DriversService {
       vehicleType: vehicleType ?? 'taxi',
       lat: 12.6392,
       lng: -8.0029,
+      heading: 0,
       isActive: true,
       isBlocked: false,
       lastSeen: new Date(),
@@ -65,6 +104,7 @@ export class DriversService {
       vehicleType: savedDriver.vehicleType,
       lat: savedDriver.lat,
       lng: savedDriver.lng,
+      heading: savedDriver.heading,
       isActive: savedDriver.isActive,
       isBlocked: savedDriver.isBlocked,
       lastSeen: savedDriver.lastSeen,
@@ -100,6 +140,7 @@ export class DriversService {
       vehicleType: updatedDriver.vehicleType,
       lat: updatedDriver.lat,
       lng: updatedDriver.lng,
+      heading: updatedDriver.heading,
       isActive: updatedDriver.isActive,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
@@ -116,6 +157,7 @@ export class DriversService {
       vehicleType: vehicleType ?? 'taxi',
       lat: 12.6392,
       lng: -8.0029,
+      heading: 0,
       isActive: true,
       isBlocked: false,
       lastSeen: new Date(),
@@ -130,13 +172,19 @@ export class DriversService {
       vehicleType: savedDriver.vehicleType,
       lat: savedDriver.lat,
       lng: savedDriver.lng,
+      heading: savedDriver.heading,
       isActive: savedDriver.isActive,
       isBlocked: savedDriver.isBlocked,
       lastSeen: savedDriver.lastSeen,
     };
   }
 
-  async updateLocation(id: number, lat: number, lng: number) {
+  async updateLocation(
+    id: number,
+    lat: number,
+    lng: number,
+    heading = 0,
+  ) {
     const driver = await this.driversRepository.findOne({
       where: { id },
     });
@@ -151,6 +199,7 @@ export class DriversService {
 
     driver.lat = lat;
     driver.lng = lng;
+    driver.heading = heading;
     driver.lastSeen = new Date();
 
     const updatedDriver = await this.driversRepository.save(driver);
@@ -162,6 +211,7 @@ export class DriversService {
       vehicleType: updatedDriver.vehicleType,
       lat: updatedDriver.lat,
       lng: updatedDriver.lng,
+      heading: updatedDriver.heading,
       isActive: updatedDriver.isActive,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,

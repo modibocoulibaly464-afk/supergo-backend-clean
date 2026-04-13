@@ -23,6 +23,9 @@ export class Driver {
   @Column('float', { nullable: true, default: -8.0029 })
   lng!: number | null;
 
+  @Column('float', { nullable: true, default: 0 })
+  heading!: number | null;
+
   @Column({ default: true })
   isActive!: boolean;
 
