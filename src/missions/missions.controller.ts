@@ -47,16 +47,18 @@ export class MissionsController {
     },
   ) {
     return this.missionsService.create(
-      body.clientId,
+      Number(body.clientId),
       body.pickup,
       body.destination,
-      body.pickupLat,
-      body.pickupLng,
-      body.destinationLat,
-      body.destinationLng,
-      body.price,
+      Number(body.pickupLat),
+      Number(body.pickupLng),
+      Number(body.destinationLat),
+      Number(body.destinationLng),
+      Number(body.price),
       body.vehicleType,
-      body.driverId,
+      body.driverId !== undefined && body.driverId !== null
+        ? Number(body.driverId)
+        : undefined,
     );
   }
 
@@ -65,7 +67,10 @@ export class MissionsController {
     @Param('id') id: string,
     @Body() body: { driverId: number },
   ) {
-    return this.missionsService.assignDriver(Number(id), body.driverId);
+    return this.missionsService.assignDriver(
+      Number(id),
+      Number(body.driverId),
+    );
   }
 
   @Patch(':id/status')

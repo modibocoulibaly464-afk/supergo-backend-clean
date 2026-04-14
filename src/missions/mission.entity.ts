@@ -3,38 +3,38 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 @Entity()
 export class Mission {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  clientId: number;
+  clientId!: number;
 
   @Column()
-  pickup: string;
+  pickup!: string;
 
   @Column()
-  destination: string;
+  destination!: string;
 
   @Column('float')
-  pickupLat: number;
+  pickupLat!: number;
 
   @Column('float')
-  pickupLng: number;
+  pickupLng!: number;
 
   @Column('float')
-  destinationLat: number;
+  destinationLat!: number;
 
   @Column('float')
-  destinationLng: number;
+  destinationLng!: number;
 
   @Column({ type: 'int', nullable: true })
-  driverId: number | null;
+  driverId!: number | null;
 
   @Column({ type: 'int', default: 0 })
-  price: number;
+  price!: number;
 
   @Column({ default: 'taxi' })
-  vehicleType: string;
+  vehicleType!: string;
 
   @Column({ default: 'pending' })
-  status: string;
+  status!: string;
 }

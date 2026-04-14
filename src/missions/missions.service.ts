@@ -158,6 +158,7 @@ export class MissionsService {
         if (d.isactive !== true) return false;
         if (d.isblocked === true) return false;
         if (busyDriverIds.includes(d.id)) return false;
+
         if (!d.lastseen) return false;
 
         const lastSeenTime = new Date(d.lastseen).getTime();
@@ -166,10 +167,10 @@ export class MissionsService {
         return now - lastSeenTime <= onlineThresholdMs;
       });
 
-      if (availableDrivers.length == 0) {
+      if (availableDrivers.length === 0) {
         return {
           error:
-            finalVehicleType == 'moto'
+            finalVehicleType === 'moto'
               ? 'Aucun Telimani disponible'
               : 'Aucun taxi disponible',
           driverId: null,
