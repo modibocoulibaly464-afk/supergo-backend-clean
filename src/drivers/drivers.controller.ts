@@ -66,12 +66,13 @@ export class DriversController {
   @Patch(':id/location')
   updateLocation(
     @Param('id') id: string,
-    @Body() body: { lat: number; lng: number },
+    @Body() body: { lat: number; lng: number; heading?: number },
   ) {
     return this.driversService.updateLocation(
       Number(id),
       Number(body.lat),
       Number(body.lng),
+      Number(body.heading ?? 0),
     );
   }
 
