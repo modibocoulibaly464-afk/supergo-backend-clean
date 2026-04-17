@@ -28,6 +28,38 @@ function calculateDistance(
   return R * c;
 }
 
+function roundUpTo500(value: number) {
+  return Math.ceil(value / 500) * 500;
+}
+
+function calculateMotoPrice(distanceKm: number) {
+  const km = Math.ceil(distanceKm);
+
+  if (km <= 2) return 500;
+  if (km <= 5) return 1000;
+  if (km === 6) return 1500;
+  if (km <= 8) return 2000;
+  if (km <= 10) return 2500;
+  if (km <= 12) return 3000;
+  if (km <= 15) return 3500;
+  if (km <= 17) return 4000;
+  if (km <= 22) return 5000;
+
+  return 5000 + (km - 22) * 500;
+}
+
+function calculateTripPrice(distanceKm: number, vehicleType?: string) {
+  const finalVehicleType = (vehicleType ?? 'taxi').trim().toLowerCase();
+  const motoPrice = calculateMotoPrice(distanceKm);
+
+  if (finalVehicleType === 'moto') {
+    return motoPrice;
+  }
+
+  const taxiRaw = Math.round(motoPrice * 1.25);
+  return roundUpTo500(taxiRaw);
+}
+
 @Injectable()
 export class MissionsService {
   constructor(
@@ -85,7 +117,7 @@ export class MissionsService {
     pickupLng: number,
     destinationLat: number,
     destinationLng: number,
-    price: number,
+    _price: number,
     vehicleType?: string,
     driverId?: number,
   ) {
@@ -106,6 +138,15 @@ export class MissionsService {
         mission: existingActiveMission,
       };
     }
+
+    const tripDistanceKm = calculateDistance(
+      pickupLat,
+      pickupLng,
+      destinationLat,
+      destinationLng,
+    );
+
+    const finalPrice = calculateTripPrice(tripDistanceKm, finalVehicleType);
 
     let assignedDriverId: number | null = null;
     let missionStatus = 'pending';
@@ -158,7 +199,6 @@ export class MissionsService {
         if (d.isactive !== true) return false;
         if (d.isblocked === true) return false;
         if (busyDriverIds.includes(d.id)) return false;
-
         if (!d.lastseen) return false;
 
         const lastSeenTime = new Date(d.lastseen).getTime();
@@ -226,7 +266,7 @@ export class MissionsService {
       destinationLat,
       destinationLng,
       driverId: assignedDriverId,
-      price,
+      price: finalPrice,
       vehicleType: finalVehicleType,
       status: missionStatus,
     });
