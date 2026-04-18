@@ -7,6 +7,7 @@ import { DriversModule } from './drivers/drivers.module';
 import { MissionsModule } from './missions/missions.module';
 import { ClientsModule } from './clients/clients.module';
 import { SettingsModule } from './settings/settings.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SettingsModule } from './settings/settings.module';
     MissionsModule,
     ClientsModule,
     SettingsModule,
+    MessagesModule,
   ],
 })
 export class AppModule {}
