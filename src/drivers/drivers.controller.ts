@@ -6,8 +6,23 @@ import {
   Patch,
   Param,
   HttpCode,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { DriversService } from './drivers.service';
+
+function editFileName(
+  req: any,
+  file: Express.Multer.File,
+  callback: (error: Error | null, filename: string) => void,
+) {
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+  const ext = extname(file.originalname);
+  callback(null, `driver-${uniqueSuffix}${ext}`);
+}
 
 @Controller('drivers')
 export class DriversController {
@@ -30,49 +45,80 @@ export class DriversController {
 
   @Post()
   createDriver(
-    @Body() body: { name: string; phone?: string; vehicleType?: string },
+    @Body('name') name: string,
+    @Body('phone') phone?: string,
+    @Body('vehicleType') vehicleType?: string,
   ) {
     return this.driversService.create(
-      body.name,
-      body.phone,
-      body.vehicleType,
+      name,
+      phone,
+      vehicleType,
     );
   }
 
   @Post('register')
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'profilePhoto', maxCount: 1 },
+        { name: 'identityPhoto', maxCount: 1 },
+        { name: 'licensePhoto', maxCount: 1 },
+        { name: 'vehiclePhoto', maxCount: 1 },
+      ],
+      {
+        storage: diskStorage({
+          destination: './uploads',
+          filename: editFileName,
+        }),
+      },
+    ),
+  )
   register(
-    @Body()
-    body: {
-      name: string;
-      phone: string;
-      password: string;
-      vehicleType?: string;
+    @UploadedFiles()
+    files: {
+      profilePhoto?: Express.Multer.File[];
+      identityPhoto?: Express.Multer.File[];
+      licensePhoto?: Express.Multer.File[];
+      vehiclePhoto?: Express.Multer.File[];
     },
+    @Body('name') name: string,
+    @Body('phone') phone: string,
+    @Body('password') password: string,
+    @Body('vehicleType') vehicleType?: string,
   ) {
     return this.driversService.register(
-      body.name,
-      body.phone,
-      body.password,
-      body.vehicleType,
+      name,
+      phone,
+      password,
+      vehicleType,
+      files?.profilePhoto?.[0]?.filename ?? null,
+      files?.identityPhoto?.[0]?.filename ?? null,
+      files?.licensePhoto?.[0]?.filename ?? null,
+      files?.vehiclePhoto?.[0]?.filename ?? null,
     );
   }
 
   @Post('login')
   @HttpCode(200)
-  login(@Body() body: { phone: string; password: string }) {
-    return this.driversService.login(body.phone, body.password);
+  login(
+    @Body('phone') phone: string,
+    @Body('password') password: string,
+  ) {
+    return this.driversService.login(phone, password);
   }
 
   @Patch(':id/location')
   updateLocation(
     @Param('id') id: string,
-    @Body() body: { lat: number; lng: number; heading?: number },
+    @Body('lat') lat: number,
+    @Body('lng') lng: number,
+    @Body('heading') heading?: number,
   ) {
     return this.driversService.updateLocation(
       Number(id),
-      Number(body.lat),
-      Number(body.lng),
-      Number(body.heading ?? 0),
+      Number(lat),
+      Number(lng),
+      Number(heading ?? 0),
     );
   }
 
