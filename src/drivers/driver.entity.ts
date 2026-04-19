@@ -23,12 +23,14 @@ export class Driver {
   @Column('float', { nullable: true, default: -8.0029 })
   lng!: number | null;
 
-  // 👉 direction du véhicule (pour animation)
   @Column('float', { default: 0 })
   heading!: number;
 
-  @Column({ default: true })
+  @Column({ default: false })
   isActive!: boolean;
+
+  @Column({ default: false })
+  isApproved!: boolean;
 
   @Column({ default: false })
   isBlocked!: boolean;
