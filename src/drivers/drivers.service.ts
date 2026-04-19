@@ -22,6 +22,7 @@ export class DriversService {
         'lng',
         'heading',
         'isActive',
+        'isApproved',
         'isBlocked',
         'lastSeen',
       ],
@@ -40,11 +41,13 @@ export class DriversService {
         'lng',
         'heading',
         'isActive',
+        'isApproved',
         'isBlocked',
         'lastSeen',
       ],
       where: {
         isActive: true,
+        isApproved: true,
         isBlocked: false,
       },
       order: { id: 'DESC' },
@@ -63,6 +66,7 @@ export class DriversService {
         'lng',
         'heading',
         'isActive',
+        'isApproved',
         'isBlocked',
         'lastSeen',
       ],
@@ -81,8 +85,25 @@ export class DriversService {
     password: string,
     vehicleType?: string,
   ) {
+    const cleanName = name.trim();
+    const cleanPhone = phone.trim();
+    const cleanVehicleType =
+      vehicleType?.trim().toLowerCase() === 'moto' ? 'moto' : 'taxi';
+
+    if (!cleanName) {
+      return { error: 'Le nom est obligatoire' };
+    }
+
+    if (!cleanPhone) {
+      return { error: 'Le téléphone est obligatoire' };
+    }
+
+    if (!password || password.trim().length < 6) {
+      return { error: 'Le mot de passe doit contenir au moins 6 caractères' };
+    }
+
     const existingDriver = await this.driversRepository.findOne({
-      where: { phone },
+      where: { phone: cleanPhone },
     });
 
     if (existingDriver) {
@@ -92,16 +113,17 @@ export class DriversService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const driver = this.driversRepository.create({
-      name,
-      phone,
+      name: cleanName,
+      phone: cleanPhone,
       password: hashedPassword,
-      vehicleType: vehicleType ?? 'taxi',
+      vehicleType: cleanVehicleType,
       lat: 12.6392,
       lng: -8.0029,
       heading: 0,
-      isActive: true,
+      isActive: false,
+      isApproved: false,
       isBlocked: false,
-      lastSeen: new Date(),
+      lastSeen: null,
     });
 
     const savedDriver = await this.driversRepository.save(driver);
@@ -111,18 +133,16 @@ export class DriversService {
       name: savedDriver.name,
       phone: savedDriver.phone,
       vehicleType: savedDriver.vehicleType,
-      lat: savedDriver.lat,
-      lng: savedDriver.lng,
-      heading: savedDriver.heading,
       isActive: savedDriver.isActive,
+      isApproved: savedDriver.isApproved,
       isBlocked: savedDriver.isBlocked,
-      lastSeen: savedDriver.lastSeen,
+      message: 'Compte chauffeur créé. En attente de validation.',
     };
   }
 
   async login(phone: string, password: string) {
     const driver = await this.driversRepository.findOne({
-      where: { phone },
+      where: { phone: phone.trim() },
     });
 
     if (!driver) {
@@ -139,6 +159,10 @@ export class DriversService {
       return { error: 'Téléphone ou mot de passe incorrect' };
     }
 
+    if (!driver.isApproved) {
+      return { error: 'Votre compte chauffeur est en attente de validation' };
+    }
+
     driver.lastSeen = new Date();
     const updatedDriver = await this.driversRepository.save(driver);
 
@@ -151,25 +175,39 @@ export class DriversService {
       lng: updatedDriver.lng,
       heading: updatedDriver.heading,
       isActive: updatedDriver.isActive,
+      isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
     };
   }
 
   async create(name: string, phone?: string, vehicleType?: string) {
+    const cleanPhone = (phone ?? '').trim();
+
+    if (cleanPhone) {
+      const existingDriver = await this.driversRepository.findOne({
+        where: { phone: cleanPhone },
+      });
+
+      if (existingDriver) {
+        return { error: 'Téléphone déjà utilisé' };
+      }
+    }
+
     const hashedPassword = await bcrypt.hash('1234', 10);
 
     const driver = this.driversRepository.create({
-      name,
-      phone: phone ?? '',
+      name: name.trim(),
+      phone: cleanPhone,
       password: hashedPassword,
-      vehicleType: vehicleType ?? 'taxi',
+      vehicleType: vehicleType?.trim().toLowerCase() === 'moto' ? 'moto' : 'taxi',
       lat: 12.6392,
       lng: -8.0029,
       heading: 0,
-      isActive: true,
+      isActive: false,
+      isApproved: true,
       isBlocked: false,
-      lastSeen: new Date(),
+      lastSeen: null,
     });
 
     const savedDriver = await this.driversRepository.save(driver);
@@ -183,6 +221,7 @@ export class DriversService {
       lng: savedDriver.lng,
       heading: savedDriver.heading,
       isActive: savedDriver.isActive,
+      isApproved: savedDriver.isApproved,
       isBlocked: savedDriver.isBlocked,
       lastSeen: savedDriver.lastSeen,
     };
@@ -206,6 +245,10 @@ export class DriversService {
       return { error: 'Ce chauffeur est bloqué' };
     }
 
+    if (!driver.isApproved) {
+      return { error: 'Compte chauffeur non validé' };
+    }
+
     driver.lat = lat;
     driver.lng = lng;
     driver.heading = heading ?? 0;
@@ -222,6 +265,7 @@ export class DriversService {
       lng: updatedDriver.lng,
       heading: updatedDriver.heading,
       isActive: updatedDriver.isActive,
+      isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
     };
@@ -240,6 +284,10 @@ export class DriversService {
       return { error: 'Impossible d’activer un chauffeur bloqué' };
     }
 
+    if (!driver.isApproved) {
+      return { error: 'Votre compte chauffeur est en attente de validation' };
+    }
+
     driver.isActive = true;
     driver.lastSeen = new Date();
 
@@ -248,6 +296,7 @@ export class DriversService {
     return {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
+      isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
     };
@@ -269,6 +318,29 @@ export class DriversService {
     return {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
+      isApproved: updatedDriver.isApproved,
+      isBlocked: updatedDriver.isBlocked,
+      lastSeen: updatedDriver.lastSeen,
+    };
+  }
+
+  async approveDriver(id: number) {
+    const driver = await this.driversRepository.findOne({
+      where: { id },
+    });
+
+    if (!driver) {
+      return { error: 'Chauffeur introuvable' };
+    }
+
+    driver.isApproved = true;
+
+    const updatedDriver = await this.driversRepository.save(driver);
+
+    return {
+      id: updatedDriver.id,
+      isActive: updatedDriver.isActive,
+      isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
     };
@@ -291,6 +363,7 @@ export class DriversService {
     return {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
+      isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
     };
@@ -312,6 +385,7 @@ export class DriversService {
     return {
       id: updatedDriver.id,
       isActive: updatedDriver.isActive,
+      isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
       lastSeen: updatedDriver.lastSeen,
     };

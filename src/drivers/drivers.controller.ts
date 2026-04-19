@@ -86,6 +86,11 @@ export class DriversController {
     return this.driversService.deactivateDriver(Number(id));
   }
 
+  @Patch(':id/approve')
+  approveDriver(@Param('id') id: string) {
+    return this.driversService.approveDriver(Number(id));
+  }
+
   @Patch(':id/block')
   blockDriver(@Param('id') id: string) {
     return this.driversService.blockDriver(Number(id));
