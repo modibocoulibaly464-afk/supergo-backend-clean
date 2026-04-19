@@ -24,6 +24,10 @@ export class DriversService {
         'isActive',
         'isApproved',
         'isBlocked',
+        'profilePhoto',
+        'identityPhoto',
+        'licensePhoto',
+        'vehiclePhoto',
         'lastSeen',
       ],
       order: { id: 'DESC' },
@@ -43,6 +47,10 @@ export class DriversService {
         'isActive',
         'isApproved',
         'isBlocked',
+        'profilePhoto',
+        'identityPhoto',
+        'licensePhoto',
+        'vehiclePhoto',
         'lastSeen',
       ],
       where: {
@@ -68,6 +76,10 @@ export class DriversService {
         'isActive',
         'isApproved',
         'isBlocked',
+        'profilePhoto',
+        'identityPhoto',
+        'licensePhoto',
+        'vehiclePhoto',
         'lastSeen',
       ],
     });
@@ -84,6 +96,10 @@ export class DriversService {
     phone: string,
     password: string,
     vehicleType?: string,
+    profilePhoto?: string | null,
+    identityPhoto?: string | null,
+    licensePhoto?: string | null,
+    vehiclePhoto?: string | null,
   ) {
     const cleanName = name.trim();
     const cleanPhone = phone.trim();
@@ -123,6 +139,10 @@ export class DriversService {
       isActive: false,
       isApproved: false,
       isBlocked: false,
+      profilePhoto: profilePhoto ?? null,
+      identityPhoto: identityPhoto ?? null,
+      licensePhoto: licensePhoto ?? null,
+      vehiclePhoto: vehiclePhoto ?? null,
       lastSeen: null,
     });
 
@@ -133,6 +153,10 @@ export class DriversService {
       name: savedDriver.name,
       phone: savedDriver.phone,
       vehicleType: savedDriver.vehicleType,
+      profilePhoto: savedDriver.profilePhoto,
+      identityPhoto: savedDriver.identityPhoto,
+      licensePhoto: savedDriver.licensePhoto,
+      vehiclePhoto: savedDriver.vehiclePhoto,
       isActive: savedDriver.isActive,
       isApproved: savedDriver.isApproved,
       isBlocked: savedDriver.isBlocked,
@@ -177,6 +201,10 @@ export class DriversService {
       isActive: updatedDriver.isActive,
       isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
+      profilePhoto: updatedDriver.profilePhoto,
+      identityPhoto: updatedDriver.identityPhoto,
+      licensePhoto: updatedDriver.licensePhoto,
+      vehiclePhoto: updatedDriver.vehiclePhoto,
       lastSeen: updatedDriver.lastSeen,
     };
   }
@@ -207,6 +235,10 @@ export class DriversService {
       isActive: false,
       isApproved: true,
       isBlocked: false,
+      profilePhoto: null,
+      identityPhoto: null,
+      licensePhoto: null,
+      vehiclePhoto: null,
       lastSeen: null,
     });
 
@@ -223,6 +255,10 @@ export class DriversService {
       isActive: savedDriver.isActive,
       isApproved: savedDriver.isApproved,
       isBlocked: savedDriver.isBlocked,
+      profilePhoto: savedDriver.profilePhoto,
+      identityPhoto: savedDriver.identityPhoto,
+      licensePhoto: savedDriver.licensePhoto,
+      vehiclePhoto: savedDriver.vehiclePhoto,
       lastSeen: savedDriver.lastSeen,
     };
   }
@@ -267,6 +303,10 @@ export class DriversService {
       isActive: updatedDriver.isActive,
       isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
+      profilePhoto: updatedDriver.profilePhoto,
+      identityPhoto: updatedDriver.identityPhoto,
+      licensePhoto: updatedDriver.licensePhoto,
+      vehiclePhoto: updatedDriver.vehiclePhoto,
       lastSeen: updatedDriver.lastSeen,
     };
   }
@@ -342,6 +382,10 @@ export class DriversService {
       isActive: updatedDriver.isActive,
       isApproved: updatedDriver.isApproved,
       isBlocked: updatedDriver.isBlocked,
+      profilePhoto: updatedDriver.profilePhoto,
+      identityPhoto: updatedDriver.identityPhoto,
+      licensePhoto: updatedDriver.licensePhoto,
+      vehiclePhoto: updatedDriver.vehiclePhoto,
       lastSeen: updatedDriver.lastSeen,
     };
   }

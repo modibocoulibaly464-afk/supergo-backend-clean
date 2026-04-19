@@ -1,25 +1,25 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class Message {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  missionId: number;
+  missionId!: number;
 
   @Column()
-  senderType: string; // client | driver
+  senderType!: string;
 
   @Column()
-  senderId: number;
+  senderId!: number;
 
   @Column()
-  receiverId: number;
+  receiverId!: number;
 
   @Column('text')
-  content: string;
+  content!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

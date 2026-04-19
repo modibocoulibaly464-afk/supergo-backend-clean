@@ -35,6 +35,18 @@ export class Driver {
   @Column({ default: false })
   isBlocked!: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  profilePhoto!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  identityPhoto!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  licensePhoto!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  vehiclePhoto!: string | null;
+
   @Column({ type: 'timestamp', nullable: true })
   lastSeen!: Date | null;
 }
