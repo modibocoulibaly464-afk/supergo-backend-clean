@@ -4,6 +4,31 @@ import { Repository } from 'typeorm';
 import { Driver } from './driver.entity';
 import * as bcrypt from 'bcrypt';
 
+function toRad(value: number) {
+  return (value * Math.PI) / 180;
+}
+
+function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+) {
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 @Injectable()
 export class DriversService {
   constructor(
@@ -60,6 +85,77 @@ export class DriversService {
       },
       order: { id: 'DESC' },
     });
+  }
+
+  async findAvailableDrivers(
+    pickupLat: number,
+    pickupLng: number,
+    vehicleType?: string,
+  ) {
+    const finalVehicleType =
+      vehicleType?.trim().toLowerCase() === 'moto' ? 'moto' : 'taxi';
+
+    const drivers = await this.driversRepository.find({
+      select: [
+        'id',
+        'name',
+        'phone',
+        'vehicleType',
+        'lat',
+        'lng',
+        'heading',
+        'isActive',
+        'isApproved',
+        'isBlocked',
+        'profilePhoto',
+        'lastSeen',
+      ],
+      where: {
+        isActive: true,
+        isApproved: true,
+        isBlocked: false,
+        vehicleType: finalVehicleType,
+      },
+    });
+
+    const now = Date.now();
+    const onlineThresholdMs = 2 * 60 * 1000;
+
+    const availableDrivers = drivers
+      .filter((driver) => {
+        if (driver.lat == null || driver.lng == null) return false;
+        if (!driver.lastSeen) return false;
+
+        const lastSeenTime = new Date(driver.lastSeen).getTime();
+        if (isNaN(lastSeenTime)) return false;
+
+        return now - lastSeenTime <= onlineThresholdMs;
+      })
+      .map((driver) => {
+        const distanceKm = calculateDistance(
+          pickupLat,
+          pickupLng,
+          Number(driver.lat),
+          Number(driver.lng),
+        );
+
+        return {
+          id: driver.id,
+          name: driver.name,
+          phone: driver.phone,
+          vehicleType: driver.vehicleType,
+          lat: driver.lat,
+          lng: driver.lng,
+          heading: driver.heading,
+          profilePhoto: driver.profilePhoto,
+          distanceKm: Number(distanceKm.toFixed(2)),
+          estimatedArrivalMin: Math.max(1, Math.ceil(distanceKm * 3)),
+        };
+      })
+      .sort((a, b) => a.distanceKm - b.distanceKm)
+      .slice(0, 5);
+
+    return availableDrivers;
   }
 
   async findOne(id: number) {
@@ -228,7 +324,8 @@ export class DriversService {
       name: name.trim(),
       phone: cleanPhone,
       password: hashedPassword,
-      vehicleType: vehicleType?.trim().toLowerCase() === 'moto' ? 'moto' : 'taxi',
+      vehicleType:
+        vehicleType?.trim().toLowerCase() === 'moto' ? 'moto' : 'taxi',
       lat: 12.6392,
       lng: -8.0029,
       heading: 0,
@@ -263,12 +360,7 @@ export class DriversService {
     };
   }
 
-  async updateLocation(
-    id: number,
-    lat: number,
-    lng: number,
-    heading?: number,
-  ) {
+  async updateLocation(id: number, lat: number, lng: number, heading?: number) {
     const driver = await this.driversRepository.findOne({
       where: { id },
     });

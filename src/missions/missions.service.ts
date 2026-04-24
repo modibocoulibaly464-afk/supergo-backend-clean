@@ -67,6 +67,37 @@ export class MissionsService {
     private readonly missionsRepository: Repository<Mission>,
   ) {}
 
+  private async enrichMissionWithDriver(mission: Mission | null) {
+    if (!mission) return null;
+
+    let driverName: string | null = null;
+    let driverPhone: string | null = null;
+    let driverProfilePhoto: string | null = null;
+
+    if (mission.driverId) {
+      const drivers = await this.missionsRepository.query(
+        `SELECT name, phone, "profilePhoto"
+         FROM driver
+         WHERE id = $1
+         LIMIT 1`,
+        [mission.driverId],
+      );
+
+      if (drivers.length > 0) {
+        driverName = drivers[0].name ?? null;
+        driverPhone = drivers[0].phone ?? null;
+        driverProfilePhoto = drivers[0].profilePhoto ?? null;
+      }
+    }
+
+    return {
+      ...mission,
+      driverName,
+      driverPhone,
+      driverProfilePhoto,
+    };
+  }
+
   async findAll() {
     return this.missionsRepository.find({
       order: { id: 'DESC' },
@@ -92,7 +123,7 @@ export class MissionsService {
   }
 
   async findByClient(clientId: number) {
-    return this.missionsRepository
+    const mission = await this.missionsRepository
       .createQueryBuilder('mission')
       .where('mission.clientId = :clientId', { clientId })
       .andWhere('mission.status IN (:...statuses)', {
@@ -100,13 +131,21 @@ export class MissionsService {
       })
       .orderBy('mission.id', 'DESC')
       .getOne();
+
+    return this.enrichMissionWithDriver(mission);
   }
 
   async findAllByClient(clientId: number) {
-    return this.missionsRepository.find({
+    const missions = await this.missionsRepository.find({
       where: { clientId },
       order: { id: 'DESC' },
     });
+
+    const enriched = await Promise.all(
+      missions.map((mission) => this.enrichMissionWithDriver(mission)),
+    );
+
+    return enriched;
   }
 
   async create(
@@ -135,7 +174,7 @@ export class MissionsService {
     if (existingActiveMission) {
       return {
         error: 'Une mission active existe déjà',
-        mission: existingActiveMission,
+        mission: await this.enrichMissionWithDriver(existingActiveMission),
       };
     }
 
@@ -185,9 +224,19 @@ export class MissionsService {
         vehicletype: string | null;
         isactive: boolean;
         isblocked: boolean;
+        isapproved: boolean;
         lastseen: string | null;
       }> = await this.missionsRepository.query(
-        `SELECT id, lat, lng, "vehicleType" AS vehicletype, "isActive" AS isactive, "isBlocked" AS isblocked, "lastSeen" AS lastseen FROM driver`,
+        `SELECT
+          id,
+          lat,
+          lng,
+          "vehicleType" AS vehicletype,
+          "isActive" AS isactive,
+          "isBlocked" AS isblocked,
+          "isApproved" AS isapproved,
+          "lastSeen" AS lastseen
+         FROM driver`,
       );
 
       const now = Date.now();
@@ -198,6 +247,7 @@ export class MissionsService {
         if ((d.vehicletype ?? 'taxi') !== finalVehicleType) return false;
         if (d.isactive !== true) return false;
         if (d.isblocked === true) return false;
+        if (d.isapproved !== true) return false;
         if (busyDriverIds.includes(d.id)) return false;
         if (!d.lastseen) return false;
 
@@ -271,7 +321,8 @@ export class MissionsService {
       status: missionStatus,
     });
 
-    return this.missionsRepository.save(mission);
+    const savedMission = await this.missionsRepository.save(mission);
+    return this.enrichMissionWithDriver(savedMission);
   }
 
   async assignDriver(id: number, driverId: number) {
@@ -299,7 +350,8 @@ export class MissionsService {
     mission.driverId = driverId;
     mission.status = 'assigned';
 
-    return this.missionsRepository.save(mission);
+    const updatedMission = await this.missionsRepository.save(mission);
+    return this.enrichMissionWithDriver(updatedMission);
   }
 
   async updateStatus(id: number, status: string) {
@@ -313,6 +365,7 @@ export class MissionsService {
 
     mission.status = status;
 
-    return this.missionsRepository.save(mission);
+    const updatedMission = await this.missionsRepository.save(mission);
+    return this.enrichMissionWithDriver(updatedMission);
   }
 }
